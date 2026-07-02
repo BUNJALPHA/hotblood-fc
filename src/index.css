@@ -1,6 +1,14 @@
+/* Typefaces (must precede all other statements) */
+@import url("https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap");
 @import "tailwindcss";
 
+/* ============================================
+   HOT BLOOD FC — Global Design System
+   Tailwind v4 theme tokens + custom animations
+   ============================================ */
+
 @theme {
+  /* Blood / Fire brand palette */
   --color-blood-50: #fff1f1;
   --color-blood-100: #ffdfdf;
   --color-blood-200: #ffc5c5;
@@ -12,17 +20,156 @@
   --color-blood-800: #a30000;
   --color-blood-900: #750000;
   --color-blood-950: #450000;
-  
+
+  /* Gold / trophies */
   --color-gold-400: #FFD700;
   --color-gold-500: #f1e20a;
   --color-gold-600: #b8860b;
-  
-  --color-dark-900: #0d1117;
-  --color-dark-800: #161b22;
-  --color-dark-700: #21262d;
+
+  /* Dark surfaces */
+  --color-dark-900: #07070a;
+  --color-dark-800: #0d0f14;
+  --color-dark-700: #161b22;
+
+  /* Typography — sport-editorial, not generic */
+  --font-display: "Oswald", "Bebas Neue", system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* Typefaces loaded at top of file */
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background-color: #0d1117;
+  background-color: var(--color-dark-900);
   color: white;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ============================================
+   KEYFRAME LIBRARY — distinctive, non-generic
+   ============================================ */
+
+/* Horizontal infinite marquee (ticker / sponsor strip) */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+.animate-marquee-fast {
+  animation: marquee 18s linear infinite;
+}
+.animate-marquee-reverse {
+  animation: marquee 26s linear infinite reverse;
+}
+
+/* Slow Ken-Burns zoom for hero imagery */
+@keyframes slow-zoom {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.12); }
+}
+.animate-slow-zoom {
+  animation: slow-zoom 12s ease-out forwards;
+}
+
+/* 3-color gradient sweep across text */
+@keyframes gradient-sweep {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.animate-gradient-sweep {
+  background-size: 200% 200%;
+  animation: gradient-sweep 5s ease infinite;
+}
+
+/* Shimmer (chrome / skeleton) */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.25) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: shimmer 2.5s linear infinite;
+}
+
+/* Fire flicker for accent glows */
+@keyframes flicker {
+  0%, 100% { opacity: 0.9; transform: scale(1); }
+  25% { opacity: 0.7; transform: scale(1.03); }
+  50% { opacity: 1; transform: scale(0.98); }
+  75% { opacity: 0.85; transform: scale(1.02); }
+}
+.animate-flicker {
+  animation: flicker 3s ease-in-out infinite;
+}
+
+/* Pulse ring (live indicator) */
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.animate-pulse-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Scroll-reveal helper (IntersectionObserver toggles .revealed) */
+.reveal {
+  opacity: 0;
+  transform: translateY(48px);
+  transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #0d0f14; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #ed0000, #ff4500);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover { background: #ff4500; }
+
+/* Selection */
+::selection {
+  background: rgba(237, 0, 0, 0.4);
+  color: #fff;
+}
+
+/* Utility: hide scrollbar on horizontal scroll rows */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Utility: text balance for headlines */
+.text-balance { text-wrap: balance; }
+
+/* Reduced motion — respect accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal { opacity: 1; transform: none; }
 }
