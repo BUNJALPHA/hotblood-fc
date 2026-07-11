@@ -63,7 +63,3 @@ export interface AttendanceRecord {
 }
 
 export type ViewMode = 'list' | 'schedule' | 'live' | 'summary' | 'attendance' | 'leagues';
-export interface Match {
-  // ... existing fields
-  ended_at?: string | null;
-}

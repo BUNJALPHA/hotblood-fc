@@ -21,6 +21,9 @@ import { format, addDays, isPast, isFuture, startOfMonth, endOfMonth, eachDayOfI
 import Broadcaster from '../../public/live/Broadcaster'
 import VideoUploader from '../components/dashboard/VideoUploader'
 import MatchesManager from '../components/dashboard/MatchesManager'
+import NewsManager from '../components/dashboard/NewsManager'
+import FinanceManager from '../components/dashboard/FinanceManager'
+import UsersManager from '../components/dashboard/UsersManager'
 
 // --- Types ---
 interface Player {
@@ -194,6 +197,7 @@ export default function ManagementDashboard() {
   // UI states
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [playerFilter, setPlayerFilter] = useState('All')
   
   // Modal states
   const [modals, setModals] = useState({
@@ -453,6 +457,18 @@ export default function ManagementDashboard() {
     fetchPlayers()
   }
 
+  const toggleProductStatus = async (id: string, current: boolean) => {
+    await supabase.from('products').update({ is_active: !current }).eq('id', id)
+    fetchProducts()
+  }
+
+  const deleteProduct = async (id: string) => {
+    if (confirm('Delete this product permanently?')) {
+      await supabase.from('products').delete().eq('id', id)
+      fetchProducts()
+    }
+  }
+
   const deletePlayer = async (id: string) => {
     if (confirm('Are you sure you want to delete this player?')) {
       await supabase.from('players').delete().eq('id', id)
@@ -562,10 +578,17 @@ export default function ManagementDashboard() {
     { id: 'users', label: 'Users', icon: Users },
   ]
 
-  const filteredPlayers = players.filter(p => 
-    p.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.position.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredPlayers = players.filter(p => {
+    const matchesSearch = p.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.position.toLowerCase().includes(searchQuery.toLowerCase())
+    if (!matchesSearch) return false
+    if (playerFilter === 'All') return true
+    if (playerFilter === 'Senior') return p.category === 'senior'
+    if (playerFilter === 'Junior') return p.category === 'junior'
+    if (playerFilter === 'Fit') return p.fitness_status === 'fit'
+    if (playerFilter === 'Injured') return p.fitness_status === 'injured'
+    return true
+  })
 
   if (loading) {
     return (
@@ -627,9 +650,29 @@ export default function ManagementDashboard() {
         </div>
       </nav>
 
-      <div className="max-w-[1920px] mx-auto flex gap-6 p-6 relative z-10">
-        {/* Sidebar */}
-        <aside className="w-72 hidden lg:block sticky top-24 h-fit space-y-4">
+      <div className="max-w-[1920px] mx-auto flex gap-6 p-4 sm:p-6 relative z-10">
+        {/* Mobile Tab Bar - visible on screens smaller than lg */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0a0f1c]/95 backdrop-blur-xl border-t border-slate-800/50 px-2 py-2">
+          <div className="flex gap-1 overflow-x-auto no-scrollbar">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-shrink-0 flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all min-w-[60px] ${
+                  activeTab === tab.id 
+                    ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white' 
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <tab.icon className="w-5 h-5" />
+                <span className="text-[11px] font-medium leading-tight">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Sidebar - desktop only */}
+        <aside className="w-72 hidden lg:block sticky top-24 h-fit space-y-4 mb-16">
           <GlassCard className="p-4 space-y-1">
             {tabs.map((tab) => (
               <button
@@ -871,7 +914,15 @@ export default function ManagementDashboard() {
                 {/* Filter Pills */}
                 <div className="flex gap-2 overflow-x-auto pb-2">
                   {['All', 'Senior', 'Junior', 'Fit', 'Injured'].map((filter) => (
-                    <button key={filter} className="px-4 py-2 rounded-full bg-slate-800/50 border border-slate-700 text-slate-300 hover:border-orange-500/50 hover:text-white transition-all whitespace-nowrap text-sm font-medium">
+                    <button
+                      key={filter}
+                      onClick={() => setPlayerFilter(filter)}
+                      className={`px-4 py-2 rounded-full border transition-all whitespace-nowrap text-sm font-medium ${
+                        playerFilter === filter
+                          ? 'bg-orange-500 border-orange-500 text-white'
+                          : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:border-orange-500/50 hover:text-white'
+                      }`}
+                    >
                       {filter}
                     </button>
                   ))}
@@ -1152,10 +1203,17 @@ export default function ManagementDashboard() {
                               {product.stock_quantity} in stock
                             </span>
                             <div className="flex gap-2">
-                              <button className="p-2 hover:bg-slate-700/50 rounded-lg text-slate-400 hover:text-white">
-                                <Edit3 className="w-4 h-4" />
+                              <button
+                                onClick={() => toggleProductStatus(product.id, product.is_active)}
+                                className={`p-2 rounded-lg transition-colors ${product.is_active ? 'text-emerald-400 hover:bg-emerald-500/10' : 'text-slate-500 hover:bg-slate-700/50'}`}
+                                title={product.is_active ? 'Deactivate' : 'Activate'}
+                              >
+                                {product.is_active ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
                               </button>
-                              <button className="p-2 hover:bg-red-500/10 rounded-lg text-slate-400 hover:text-red-400">
+                              <button
+                                onClick={() => deleteProduct(product.id)}
+                                className="p-2 hover:bg-red-500/10 rounded-lg text-slate-400 hover:text-red-400 transition-colors"
+                              >
                                 <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
@@ -1180,23 +1238,24 @@ export default function ManagementDashboard() {
               </motion.div>
             )}
 
-            {/* Other tabs placeholder */}
-            {( activeTab === 'news' || activeTab === 'finance' || activeTab === 'users') && (
-              <motion.div 
-                key={activeTab}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center py-32"
-              >
-                <div className="w-24 h-24 rounded-full bg-slate-800/50 flex items-center justify-center mb-6">
-            
-                  {activeTab === 'news' && <Newspaper className="w-12 h-12 text-slate-500" />}
-                  {activeTab === 'finance' && <DollarSign className="w-12 h-12 text-slate-500" />}
-                  {activeTab === 'users' && <Users className="w-12 h-12 text-slate-500" />}
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Coming Soon</h2>
-                <p className="text-slate-400">This section is under development</p>
+            {/* NEWS TAB */}
+            {activeTab === 'news' && (
+              <motion.div key="news" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <NewsManager />
+              </motion.div>
+            )}
+
+            {/* FINANCE TAB */}
+            {activeTab === 'finance' && (
+              <motion.div key="finance" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <FinanceManager />
+              </motion.div>
+            )}
+
+            {/* USERS TAB */}
+            {activeTab === 'users' && (
+              <motion.div key="users" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <UsersManager />
               </motion.div>
             )}
 

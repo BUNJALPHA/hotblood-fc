@@ -1,14 +1,19 @@
 // PublicDashboard.tsx - CONNECTED VERSION
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  User, Calendar, Trophy, ShoppingCart, LogOut, TrendingUp, Users, 
+import {
+  User, Calendar, Trophy, ShoppingCart, LogOut, TrendingUp, Users,
   Ticket, Bell, Search, Home, Newspaper, Heart, Share2, ChevronRight,
   MapPin, Clock, Star, Filter, Download, X, Plus, Minus, Trash2,
-  CreditCard, Phone, Building2
+  CreditCard, Phone, Building2, MessageCircle
 } from 'lucide-react'
 import { supabase } from '../helpers/supabase'
 import { format, isPast, isFuture, isToday } from 'date-fns'
+import DonationPage from '../components/public/DonationPage'
+import ChatPanel from '../components/public/ChatPanel'
+import ProfilePage from '../components/public/ProfilePage'
+import TicketPurchase from '../components/public/TicketPurchase'
+import NotificationPanel from '../components/public/NotificationPanel'
 
 // --- Types ---
 interface Product {
@@ -443,6 +448,7 @@ export default function PublicDashboard() {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [showCart, setShowCart] = useState(false)
   const [showCheckout, setShowCheckout] = useState(false)
+  const [purchasingMatch, setPurchasingMatch] = useState<Match | null>(null)
   
   // Data states
   const [products, setProducts] = useState<Product[]>([])
@@ -580,6 +586,9 @@ export default function PublicDashboard() {
     { id: 'shop', label: 'Shop', icon: ShoppingCart },
     { id: 'tickets', label: 'Tickets', icon: Ticket },
     { id: 'news', label: 'News', icon: Newspaper },
+    { id: 'donate', label: 'Donate', icon: Heart },
+    { id: 'chat', label: 'Chat', icon: MessageCircle },
+    { id: 'profile', label: 'Profile', icon: User },
   ]
 
   const notifications = [
@@ -1164,8 +1173,7 @@ export default function PublicDashboard() {
                         item={{
                           ...product,
                           badge: product.offer_percentage > 0 ? 'Sale' : product.stock_quantity < 5 ? 'Low Stock' : null,
-                          desc: product.description,
-                          price: `KES ${product.price.toLocaleString()}`
+                          desc: product.description
                         }} 
                         idx={idx} 
                         theme={theme} 
@@ -1230,7 +1238,10 @@ export default function PublicDashboard() {
                                 <p className="text-3xl font-black text-red-600">KES 200</p>
                                 <p className="text-xs text-gray-500">per person</p>
                               </div>
-                              <button className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors flex items-center gap-2">
+                              <button
+                                onClick={() => setPurchasingMatch(match)}
+                                className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors flex items-center gap-2"
+                              >
                                 Buy Now <ChevronRight size={18} />
                               </button>
                             </div>
@@ -1321,22 +1332,52 @@ export default function PublicDashboard() {
                 )}
               </motion.div>
             )}
+
+            {/* DONATE TAB */}
+            {activeTab === 'donate' && (
+              <motion.div key="donate" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <DonationPage />
+              </motion.div>
+            )}
+
+            {/* CHAT TAB */}
+            {activeTab === 'chat' && (
+              <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+                <h1 className={`text-3xl font-black ${theme.text}`}>Fan Chat</h1>
+                <p className={`text-sm ${theme.textMuted}`}>Connect with fellow Hot Blood FC fans in real-time</p>
+                <ChatPanel channel="general" />
+              </motion.div>
+            )}
+
+            {/* PROFILE TAB */}
+            {activeTab === 'profile' && (
+              <motion.div key="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <ProfilePage onNavigate={setActiveTab} />
+              </motion.div>
+            )}
           </AnimatePresence>
         </main>
       </div>
 
-      {/* Mobile Bottom Nav */}
-      <nav className={`lg:hidden fixed bottom-0 left-0 right-0 ${theme.card} border-t ${theme.border} px-4 py-2 flex justify-around z-40`}>
-        {tabs.slice(0, 5).map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`p-3 rounded-xl flex flex-col items-center gap-1 ${activeTab === tab.id ? 'text-red-600' : theme.textMuted}`}
-          >
-            <tab.icon size={20} />
-            <span className="text-[10px] font-medium">{tab.label}</span>
-          </button>
-        ))}
+      {/* Ticket Purchase Modal */}
+      {purchasingMatch && (
+        <TicketPurchase match={purchasingMatch} onClose={() => setPurchasingMatch(null)} />
+      )}
+
+      {/* Mobile Bottom Nav - scrollable */}
+      <nav className={`lg:hidden fixed bottom-0 left-0 right-0 ${theme.card} border-t ${theme.border} px-2 py-2 z-40`}>
+        <div className="flex gap-1 overflow-x-auto no-scrollbar">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-shrink-0 flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg ${activeTab === tab.id ? 'text-red-600' : theme.textMuted}`}
+            >
+              <tab.icon size={20} />
+              <span className="text-[10px] font-medium leading-tight whitespace-nowrap">{tab.label}</span>
+            </button>
+          ))}
+        </div>
       </nav>
     </div>
   )

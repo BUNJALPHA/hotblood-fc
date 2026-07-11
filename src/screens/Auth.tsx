@@ -78,7 +78,7 @@ export default function Auth() {
         })
         if (authError) throw authError
 
-        await supabase.from('users').insert({
+        await supabase.from('profiles').insert({
           id: authData.user?.id,
           email: formData.email,
           full_name: formData.fullName,
